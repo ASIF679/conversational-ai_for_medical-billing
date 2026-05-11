@@ -2,7 +2,7 @@ from fastapi import FastAPI , Depends , HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.db.database import get_db
-from app.api_routes import doctors_availability, appointments_book, chat , check_patient_record ,email_routes
+from app.api_routes import doctors_availability, appointments_book, chat , check_patient_record ,email_routes ,voice
 app =FastAPI()
 
 @app.get("/Health")
@@ -23,4 +23,6 @@ app.include_router(check_patient_record.router)
 app.include_router(appointments_book.router)
 app.include_router(chat.router)
 app.include_router(email_routes.router)
+app.include_router(voice.router)
+
 
