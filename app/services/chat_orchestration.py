@@ -1,17 +1,19 @@
+# app/services/chat_orchestration.py
+
 import logging
 from typing import Optional, Sequence
 
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.core.config import GROQ_API_KEY, MODEL_NAME
+from app.core.config import GEMINI_API_KEY, MODEL_NAME_FROM_GEMINI
 from app.services.prompt import SYSTEM_PROMPT
-from app.tools.availibility import check_availability_by_specialization
-from app.tools.patient_tool  import get_or_create_patient_tool
-from app.tools.appointment_booking  import book_appointment_tool
-from app.tools.email_tool        import send_confirmation_email_tool
+from app.tools.availibility        import check_availability_by_specialization
+from app.tools.patient_tool        import get_or_create_patient_tool
+from app.tools.appointment_booking import book_appointment_tool
+from app.tools.email_tool          import send_confirmation_email_tool
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +25,11 @@ CHAT_TOOLS = [
     send_confirmation_email_tool,
 ]
 
-# ── LLM — Groq ────────────────────────────────────────────────────
-_llm = ChatGroq(
-    model_name    = MODEL_NAME,
-    groq_api_key  = GROQ_API_KEY,
-    temperature   = 0,
-    streaming     = False,
+# ── LLM — Gemini ──────────────────────────────────────────────────
+_llm = ChatGoogleGenerativeAI(
+    model       = MODEL_NAME_FROM_GEMINI,   # "gemini-2.0-flash"
+    google_api_key = GEMINI_API_KEY,
+    temperature = 0,
 )
 
 # ── Prompt ────────────────────────────────────────────────────────
@@ -62,7 +63,6 @@ def run_chat_turn(
     if not user_message or not user_message.strip():
         return "I didn't receive your message. Could you please try again?"
 
-    # ── Inject patient_id if already known ────────────────────────
     enriched_input = user_message
     if patient_id:
         enriched_input = (
@@ -86,7 +86,6 @@ def run_chat_turn(
 
         reply = (result.get("output") or "").strip()
 
-        # ── Log tool calls ────────────────────────────────────────
         steps = result.get("intermediate_steps", [])
         for step in steps:
             if step and len(step) >= 1:
@@ -102,29 +101,32 @@ def run_chat_turn(
         logger.info(f"Agent reply: {reply[:100]}")
         return reply
 
-    # ── Groq specific error ───────────────────────────────────────
     except Exception as e:
         error_str = str(e).lower()
 
-        # Groq bad request — usually tool calling format issue
         if "bad request" in error_str or "400" in error_str:
-            logger.warning(f"Groq bad request: {str(e)}")
+            logger.warning(f"Gemini bad request: {str(e)}")
             return (
                 "I could not process that request. "
                 "Could you rephrase and mention the doctor type clearly?"
             )
 
-        # Rate limit
         if "rate limit" in error_str or "429" in error_str:
-            logger.warning("Groq rate limit hit")
+            logger.warning("Gemini rate limit hit")
             return (
                 "I am receiving too many requests right now. "
                 "Please try again in a moment."
             )
 
-        # Context too long
+        if "quota" in error_str:
+            logger.warning("Gemini quota exceeded")
+            return (
+                "I am experiencing high demand right now. "
+                "Please try again in a moment."
+            )
+
         if "context" in error_str or "tokens" in error_str:
-            logger.warning("Groq context length exceeded")
+            logger.warning("Gemini context length exceeded")
             return (
                 "Our conversation is getting long. "
                 "Let me start fresh — how can I help you today?"
@@ -132,6 +134,6 @@ def run_chat_turn(
 
         logger.error(f"Agent error: {str(e)}")
         return (
-            "I'm sorry, something went wrong. "
+            "I am sorry, something went wrong. "
             "Please try again or call us directly at the clinic."
         )

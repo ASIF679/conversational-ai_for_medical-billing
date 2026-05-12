@@ -18,6 +18,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # Groq (Llama) — supports GROQ_API_KEY or API_KEY in .env
 GROQ_API_KEY = os.getenv("GROQ_API_KEY") or os.getenv("API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
+GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
+MODEL_NAME_FROM_GEMINI=os.getenv("MODEL_NAME_FROM_GEMINI","gemini-2.0-flash")
 
 # Email (SMTP)
 SMTP_HOST = os.getenv("SMTP_HOST")
