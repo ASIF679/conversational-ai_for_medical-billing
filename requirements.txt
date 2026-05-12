@@ -5,30 +5,41 @@ uvicorn[standard]==0.29.0
 # Database
 sqlalchemy==2.0.29
 psycopg2-binary==2.9.9
+alembic==1.13.1
 
-# Config & Validation
+# Config and Validation
 pydantic==2.6.4
+pydantic-settings==2.2.1
 python-dotenv==1.0.1
 email-validator==2.1.1
 
-# AI Stack (FIXED)
+# LangChain Core
 langchain==0.1.16
-langchain-community==0.0.32
-langchain-groq==0.1.3
-# Direct imports: langchain_core (tools, chat messages); groq client used by ChatGroq
 langchain-core==0.1.53
-groq==0.37.1
+langchain-community==0.0.32
 langchain-text-splitters==0.0.2
 
-# HTTP / Utils
-httpx==0.27.0
+# Groq - LLM and Whisper STT
+langchain-groq==0.1.3
+groq==0.37.1
 
-# Email: outbound mail uses stdlib only (smtplib, email.message); no extra package.
-# Pydantic email fields may use email-validator (listed above).
+# Gemini - LLM Agent
+langchain-google-genai==1.0.4
+google-generativeai==0.5.4
+
+# Voice TTS
+edge-tts==6.1.12
+
+# Voice Audio Processing
+pydub==0.25.1
+
+# HTTP and Utils
+httpx==0.27.0
+python-multipart==0.0.9
 
 # Scheduler
 apscheduler==3.10.4
-# For database migration
-alembic==1.13.1
 
-edge-tts
+
+
+
